@@ -1,0 +1,25 @@
+{
+  "name": "figma-hue-hunt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattholihan/figma-hue-hunt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mattholihan/figma-hue-hunt/issues"
+  },
+  "homepage": "https://github.com/mattholihan/figma-hue-hunt#readme",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.124.0",
+    "typescript": "^6.0.3"
+  }
+}

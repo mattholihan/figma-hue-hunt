@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root {
+    --bg-color: var(--figma-color-bg);
+    --text-color: var(--figma-color-text);
+    --border-color: var(--figma-color-border);
+    --primary-color: var(--figma-color-bg-brand);
+    --primary-text-color: var(--figma-color-text-onbrand);
+    --secondary-color: var(--figma-color-bg-secondary);
+  }
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: Inter, sans-serif;
+    margin: 0;
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    gap: 16px;
+  }
+  .circles-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .circle-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+  }
+  .sliders-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .slider-row label {
+    width: 20px;
+    font-weight: 500;
+  }
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    cursor: pointer;
+    margin-top: -6px;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    background: var(--border-color);
+    border-radius: 2px;
+  }
+  input[type="range"]:focus {
+    outline: none;
+  }
+  
+  /* Colorized tracks for better feedback */
+  #h-slider::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+  }
+  #s-slider::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, #808080, var(--current-hue-color, #ff0000));
+  }
+  #l-slider::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, #000000, var(--current-hue-color, #ff0000), #ffffff);
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    padding-bottom: 8px;
+  }
+  button {
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.2s;
+  }
+  button.primary {
+    background-color: var(--primary-color);
+    color: var(--primary-text-color);
+  }
+  button.primary:hover {
+    opacity: 0.9;
+  }
+  button.secondary {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+  }
+  button.secondary:hover {
+    background-color: var(--secondary-color);
+  }
+  .score-display {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 8px 0;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="circles-container">
+  <div class="circle-wrapper">
+    <div id="target-circle" class="circle"></div>
+    <span style="font-size: 12px; font-weight: 500;">Target</span>
+  </div>
+  <div class="circle-wrapper">
+    <div id="current-circle" class="circle"></div>
+    <span style="font-size: 12px; font-weight: 500;">Current</span>
+  </div>
+</div>
+
+<div class="sliders-container">
+  <div class="slider-row">
+    <label for="h-slider" title="Hue">H</label>
+    <input type="range" id="h-slider" min="0" max="360" value="180">
+  </div>
+  <div class="slider-row">
+    <label for="s-slider" title="Saturation">S</label>
+    <input type="range" id="s-slider" min="0" max="100" value="50">
+  </div>
+  <div class="slider-row">
+    <label for="l-slider" title="Lightness">L</label>
+    <input type="range" id="l-slider" min="0" max="100" value="50">
+  </div>
+</div>
+
+<div id="score-display" class="score-display">0%</div>
+
+<div class="actions">
+  <button id="check-btn" class="primary">Check Match</button>
+  <button id="trophy-btn" class="secondary" style="display: none;">Place Trophy on Canvas</button>
+</div>
+
+<script>
+  let targetHSL = { h: 0, s: 0, l: 0 };
+  let currentHSL = { h: 180, s: 50, l: 50 };
+  let currentScore = 0;
+
+  function random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function initTarget() {
+    targetHSL = {
+      h: random(0, 360),
+      s: random(30, 100), // Avoid fully desaturated targets
+      l: random(20, 80)   // Avoid fully black or white targets
+    };
+    document.getElementById('target-circle').style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
+  }
+
+  function updateCurrent() {
+    currentHSL.h = parseInt(document.getElementById('h-slider').value);
+    currentHSL.s = parseInt(document.getElementById('s-slider').value);
+    currentHSL.l = parseInt(document.getElementById('l-slider').value);
+    
+    document.getElementById('current-circle').style.backgroundColor = `hsl(${currentHSL.h}, ${currentHSL.s}%, ${currentHSL.l}%)`;
+    
+    // Update CSS variable for slider tracks
+    document.documentElement.style.setProperty('--current-hue-color', `hsl(${currentHSL.h}, 100%, 50%)`);
+  }
+
+  function calculateScore(target, current) {
+    // 1. Hue distance (circular, max distance is 180)
+    let rawDeltaH = Math.abs(target.h - current.h);
+    let deltaH = Math.min(rawDeltaH, 360 - rawDeltaH);
+    
+    // Normalize deltaH to 0-100 scale (since 180 is the max difference)
+    let normDeltaH = (deltaH / 180) * 100;
+    
+    // 2. Saturation and Lightness distance (already 0-100)
+    let deltaS = Math.abs(target.s - current.s);
+    let deltaL = Math.abs(target.l - current.l);
+    
+    // 3. Euclidean distance
+    let distance = Math.sqrt(
+      Math.pow(normDeltaH, 2) + 
+      Math.pow(deltaS, 2) + 
+      Math.pow(deltaL, 2)
+    );
+    
+    // Max possible distance is sqrt(100^2 + 100^2 + 100^2) ≈ 173.2
+    const maxDistance = Math.sqrt(30000);
+    
+    // Calculate percentage match
+    let score = Math.max(0, 100 - (distance / maxDistance) * 100);
+    return Math.round(score);
+  }
+
+  document.getElementById('h-slider').addEventListener('input', updateCurrent);
+  document.getElementById('s-slider').addEventListener('input', updateCurrent);
+  document.getElementById('l-slider').addEventListener('input', updateCurrent);
+
+  document.getElementById('check-btn').addEventListener('click', () => {
+    currentScore = calculateScore(targetHSL, currentHSL);
+    const scoreDisplay = document.getElementById('score-display');
+    scoreDisplay.innerText = `${currentScore}% Match!`;
+    scoreDisplay.style.display = 'block';
+    document.getElementById('trophy-btn').style.display = 'block';
+    document.getElementById('check-btn').style.display = 'none';
+  });
+
+  document.getElementById('trophy-btn').addEventListener('click', () => {
+    parent.postMessage({ pluginMessage: { type: 'PLACE_TROPHY', targetHSL, userHSL: currentHSL, score: currentScore } }, '*');
+    
+    // Reset game after placing trophy
+    setTimeout(() => {
+      initTarget();
+      document.getElementById('score-display').style.display = 'none';
+      document.getElementById('trophy-btn').style.display = 'none';
+      document.getElementById('check-btn').style.display = 'block';
+      // Reset sliders to current random target? Or just leave them where they are
+    }, 500);
+  });
+
+  initTarget();
+  updateCurrent();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "Pixel Perfect Match",
+  "id": "",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"],
+    "reasoning": "This plugin does not require network access."
+  }
+}

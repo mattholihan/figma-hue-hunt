@@ -1,0 +1,5 @@
+- code.ts is the Main Thread (No DOM access).
+- ui.html is the UI Thread (No Figma API access).
+- Use figma.ui.postMessage and window.onmessage for communication.
+- Style exclusively with Figma Design Tokens (e.g., --figma-color-bg).
+- All Figma node creation must be async and check for figma.loadFontAsync.
