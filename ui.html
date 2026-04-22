@@ -119,12 +119,12 @@
     opacity: 0.9;
   }
   button.secondary {
-    background-color: transparent;
+    background-color: var(--secondary-color);
     border: 1px solid var(--border-color);
     color: var(--text-color);
   }
   button.secondary:hover {
-    background-color: var(--secondary-color);
+    opacity: 0.9;
   }
   .score-display {
     text-align: center;
@@ -167,7 +167,8 @@
 
 <div class="actions">
   <button id="check-btn" class="primary">Check Match</button>
-  <button id="trophy-btn" class="secondary" style="display: none;">Place Trophy on Canvas</button>
+  <button id="add-palette-btn" class="primary" style="display: none;">Add to Palette</button>
+  <button id="try-again-btn" class="secondary" style="display: none;">Try Again</button>
 </div>
 
 <script>
@@ -230,26 +231,47 @@
   document.getElementById('s-slider').addEventListener('input', updateCurrent);
   document.getElementById('l-slider').addEventListener('input', updateCurrent);
 
+  function hslToRgbUI(h, s, l) {
+    s /= 100;
+    l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return { r: f(0), g: f(8), b: f(4) };
+  }
+
+  function rgbToHex(r, g, b) {
+    const toHex = c => Math.round(c * 255).toString(16).padStart(2, '0');
+    return ("#" + toHex(r) + toHex(g) + toHex(b)).toUpperCase();
+  }
+
   document.getElementById('check-btn').addEventListener('click', () => {
     currentScore = calculateScore(targetHSL, currentHSL);
     const scoreDisplay = document.getElementById('score-display');
     scoreDisplay.innerText = `${currentScore}% Match!`;
     scoreDisplay.style.display = 'block';
-    document.getElementById('trophy-btn').style.display = 'block';
+    document.getElementById('add-palette-btn').style.display = 'block';
+    document.getElementById('try-again-btn').style.display = 'block';
     document.getElementById('check-btn').style.display = 'none';
   });
 
-  document.getElementById('trophy-btn').addEventListener('click', () => {
-    parent.postMessage({ pluginMessage: { type: 'CREATE_TROPHY', targetHSL, userHSL: currentHSL, score: currentScore } }, '*');
-    
-    // Reset game after placing trophy
-    setTimeout(() => {
-      initTarget();
-      document.getElementById('score-display').style.display = 'none';
-      document.getElementById('trophy-btn').style.display = 'none';
-      document.getElementById('check-btn').style.display = 'block';
-      // Reset sliders to current random target? Or just leave them where they are
-    }, 500);
+  document.getElementById('add-palette-btn').addEventListener('click', () => {
+    const rgb = hslToRgbUI(targetHSL.h, targetHSL.s, targetHSL.l);
+    const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+    const hslString = `HSL(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
+    parent.postMessage({ pluginMessage: { type: 'ADD_TO_PALETTE', targetColorRGB: rgb, hex, hslString } }, '*');
+  });
+
+  document.getElementById('try-again-btn').addEventListener('click', () => {
+    initTarget();
+    document.getElementById('h-slider').value = 180;
+    document.getElementById('s-slider').value = 50;
+    document.getElementById('l-slider').value = 50;
+    updateCurrent();
+    document.getElementById('score-display').style.display = 'none';
+    document.getElementById('add-palette-btn').style.display = 'none';
+    document.getElementById('try-again-btn').style.display = 'none';
+    document.getElementById('check-btn').style.display = 'block';
   });
 
   initTarget();
