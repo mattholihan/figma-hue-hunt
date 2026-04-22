@@ -25,25 +25,34 @@
       gap: 16px;
     }
 
-    .circles-container {
+    .color-match-section {
       display: flex;
-      justify-content: space-around;
-      align-items: center;
+      flex-direction: column;
+      gap: 8px;
       margin-bottom: 8px;
     }
 
-    .circle-wrapper {
+    .color-blocks {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
+      height: 80px;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
     }
 
-    .circle {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      border: 1px solid var(--border-color);
+    .color-half {
+      flex: 1;
+    }
+
+    .color-labels {
+      display: flex;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .color-labels span {
+      flex: 1;
+      text-align: center;
     }
 
     .sliders-container {
@@ -147,10 +156,18 @@
     }
 
     .score-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       text-align: center;
-      font-size: 28px;
-      font-weight: 700;
-      margin: 8px 0;
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      -webkit-text-stroke: 1px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+      margin: 0;
+      pointer-events: none;
       display: none;
     }
   </style>
@@ -158,14 +175,15 @@
 
 <body>
 
-  <div class="circles-container">
-    <div class="circle-wrapper">
-      <div id="target-circle" class="circle"></div>
-      <span style="font-size: 12px; font-weight: 500;">Target</span>
+  <div class="color-match-section">
+    <div class="color-blocks">
+      <div id="target-color" class="color-half"></div>
+      <div id="current-color" class="color-half"></div>
+      <div id="score-display" class="score-display">0%</div>
     </div>
-    <div class="circle-wrapper">
-      <div id="current-circle" class="circle"></div>
-      <span style="font-size: 12px; font-weight: 500;">Current</span>
+    <div class="color-labels">
+      <span>Target</span>
+      <span>Current</span>
     </div>
   </div>
 
@@ -184,12 +202,10 @@
     </div>
   </div>
 
-  <div id="score-display" class="score-display">0%</div>
-
   <div class="actions">
-    <button id="check-btn" class="primary">Check Match</button>
-    <button id="add-palette-btn" class="primary" style="display: none;">Add to Palette</button>
-    <button id="try-again-btn" class="secondary" style="display: none;">Try Again</button>
+    <button id="reset-btn" class="secondary">Reset</button>
+    <button id="check-btn" class="primary">Check match</button>
+    <button id="add-palette-btn" class="primary" style="display: none;">Generate swatch</button>
   </div>
 
   <script>
@@ -207,7 +223,7 @@
         s: random(30, 100), // Avoid fully desaturated targets
         l: random(20, 80)   // Avoid fully black or white targets
       };
-      document.getElementById('target-circle').style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
+      document.getElementById('target-color').style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
     }
 
     function updateCurrent() {
@@ -215,7 +231,7 @@
       currentHSL.s = parseInt(document.getElementById('s-slider').value);
       currentHSL.l = parseInt(document.getElementById('l-slider').value);
 
-      document.getElementById('current-circle').style.backgroundColor = `hsl(${currentHSL.h}, ${currentHSL.s}%, ${currentHSL.l}%)`;
+      document.getElementById('current-color').style.backgroundColor = `hsl(${currentHSL.h}, ${currentHSL.s}%, ${currentHSL.l}%)`;
 
       // Update CSS variable for slider tracks
       document.documentElement.style.setProperty('--current-hue-color', `hsl(${currentHSL.h}, 100%, 50%)`);
@@ -269,10 +285,9 @@
     document.getElementById('check-btn').addEventListener('click', () => {
       currentScore = calculateScore(targetHSL, currentHSL);
       const scoreDisplay = document.getElementById('score-display');
-      scoreDisplay.innerText = `${currentScore}% Match!`;
+      scoreDisplay.innerText = `${currentScore}% match!`;
       scoreDisplay.style.display = 'block';
       document.getElementById('add-palette-btn').style.display = 'block';
-      document.getElementById('try-again-btn').style.display = 'block';
       document.getElementById('check-btn').style.display = 'none';
     });
 
@@ -283,7 +298,7 @@
       parent.postMessage({ pluginMessage: { type: 'ADD_TO_PALETTE', targetColorRGB: rgb, hex, hslString } }, '*');
     });
 
-    document.getElementById('try-again-btn').addEventListener('click', () => {
+    document.getElementById('reset-btn').addEventListener('click', () => {
       initTarget();
       document.getElementById('h-slider').value = 180;
       document.getElementById('s-slider').value = 50;
@@ -291,7 +306,6 @@
       updateCurrent();
       document.getElementById('score-display').style.display = 'none';
       document.getElementById('add-palette-btn').style.display = 'none';
-      document.getElementById('try-again-btn').style.display = 'none';
       document.getElementById('check-btn').style.display = 'block';
     });
 
