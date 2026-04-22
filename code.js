@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,8 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-figma.showUI(__html__, { width: 240, height: 400 });
+figma.showUI(__html__, { width: 240, height: 400, themeColors: true });
 function hslToRgb(h, s, l) {
     s /= 100;
     l /= 100;
@@ -19,7 +17,7 @@ function hslToRgb(h, s, l) {
     return { r: f(0), g: f(8), b: f(4) };
 }
 figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
-    if (msg.type === 'PLACE_TROPHY') {
+    if (msg.type === 'CREATE_TROPHY') {
         const { targetHSL, userHSL, score } = msg;
         yield figma.loadFontAsync({ family: "Inter", style: "Regular" });
         yield figma.loadFontAsync({ family: "Inter", style: "Bold" });

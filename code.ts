@@ -1,4 +1,4 @@
-figma.showUI(__html__, { width: 240, height: 400 });
+figma.showUI(__html__, { width: 240, height: 400, themeColors: true });
 
 function hslToRgb(h: number, s: number, l: number) {
   s /= 100;
@@ -10,7 +10,7 @@ function hslToRgb(h: number, s: number, l: number) {
 }
 
 figma.ui.onmessage = async msg => {
-  if (msg.type === 'PLACE_TROPHY') {
+  if (msg.type === 'CREATE_TROPHY') {
     const { targetHSL, userHSL, score } = msg;
 
     await figma.loadFontAsync({ family: "Inter", style: "Regular" });

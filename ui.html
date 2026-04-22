@@ -57,10 +57,12 @@
   input[type="range"] {
     flex: 1;
     -webkit-appearance: none;
+    appearance: none;
     background: transparent;
   }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
     height: 16px;
     width: 16px;
     border-radius: 50%;
@@ -238,7 +240,7 @@
   });
 
   document.getElementById('trophy-btn').addEventListener('click', () => {
-    parent.postMessage({ pluginMessage: { type: 'PLACE_TROPHY', targetHSL, userHSL: currentHSL, score: currentScore } }, '*');
+    parent.postMessage({ pluginMessage: { type: 'CREATE_TROPHY', targetHSL, userHSL: currentHSL, score: currentScore } }, '*');
     
     // Reset game after placing trophy
     setTimeout(() => {
