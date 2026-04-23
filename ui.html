@@ -1,321 +1,510 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-  <style>
-    :root {
-      --bg-color: var(--figma-color-bg);
-      --text-color: var(--figma-color-text);
-      --border-color: var(--figma-color-border);
-      --primary-color: var(--figma-color-bg-brand);
-      --primary-text-color: var(--figma-color-text-onbrand);
-      --secondary-color: var(--figma-color-bg-secondary);
-    }
+<style>
+/* ─── Reset ─── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+body { display: flex; flex-direction: column; }
 
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      font-family: Inter, sans-serif;
-      margin: 0;
-      padding: 16px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      gap: 16px;
-    }
+/* ─── Target (Top 40%) ─── */
+.target-color-section {
+  position: relative; flex: 0 0 40%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background-color 0.3s ease;
+}
+.target-color-section .section-label {
+  position: absolute; top: 12px; left: 16px;
+  font-size: 11px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; opacity: 0.6;
+}
+.target-color-section .hex-display {
+  font-size: 32px; font-weight: 800; letter-spacing: 1px; opacity: 0.85;
+}
 
-    .color-match-section {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
+/* ─── User (Bottom 60%) ─── */
+.user-color-section {
+  position: relative; flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
+  padding: 32px 24px 16px;
+  transition: background-color 0.05s ease;
+}
 
-    .color-blocks {
-      display: flex;
-      height: 80px;
-      border-radius: 12px;
-      overflow: hidden;
-      position: relative;
-    }
+/* Contrast modes — applied to .user-color-section via JS */
+.user-color-section[data-contrast="light"] {
+  --ui-color: #ffffff;
+  --ui-color-inv: #000000;
+  color: #ffffff;
+}
+.user-color-section[data-contrast="dark"] {
+  --ui-color: #000000;
+  --ui-color-inv: #ffffff;
+  color: #000000;
+}
+.user-color-section .section-label {
+  position: absolute; top: 14px; left: 16px;
+  font-size: 11px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; opacity: 0.6;
+}
 
-    .color-half {
-      flex: 1;
-    }
+/* ─── Score Badge ─── */
+.score-badge {
+  position: absolute; top: 40%; left: 50%;
+  transform: translate(-50%, -50%); z-index: 10;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  color: #fff; font-size: 20px; font-weight: 800;
+  padding: 6px 20px; border-radius: 40px;
+  letter-spacing: 0.5px; pointer-events: none;
+  opacity: 0; transition: opacity 0.4s ease;
+}
+.score-badge.visible { opacity: 1; }
+@keyframes pulse-in {
+  0%   { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}
+.score-badge.animate-in {
+  animation: pulse-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
 
-    .color-labels {
-      display: flex;
-      font-size: 14px;
-      font-weight: 500;
-    }
+/* ═══════════════════════════════════════════
+   Folder Tabs
+   ═══════════════════════════════════════════ */
+.tab-bar {
+  display: flex; width: 100%; max-width: 280px;
+  gap: 0; margin-bottom: -2px; position: relative; z-index: 10;
+}
+.tab-bar button {
+  padding: 7px 0; flex: 1;
+  border: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.5px; cursor: pointer;
+  color: var(--ui-color); opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+.tab-bar button:hover { opacity: 0.7; }
+.tab-bar button.active {
+  opacity: 1;
+  border-color: var(--ui-color);
+  border-bottom-color: transparent;
+  position: relative; z-index: 10;
+}
 
-    .color-labels span {
-      flex: 1;
-      text-align: center;
-    }
+/* ─── Slider Container (bordered box) ─── */
+.slider-container {
+  width: 100%; max-width: 280px;
+  border: 2px solid var(--ui-color);
+  border-radius: 0 0 8px 8px;
+  padding: 16px 14px;
+  margin-bottom: 16px;
+}
 
-    .sliders-container {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+/* ─── Slider Panels ─── */
+.slider-panel { display: none; flex-direction: column; gap: 16px; }
+.slider-panel.active { display: flex; }
 
-    .slider-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+/* ─── Slider Group ─── */
+.slider-group { display: flex; flex-direction: column; gap: 4px; }
+.slider-info {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.slider-info .slider-label {
+  font-size: 12px; font-weight: 700; color: var(--ui-color);
+}
+.slider-info .slider-value {
+  font-size: 12px; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--ui-color);
+}
 
-    .slider-row label {
-      width: 20px;
-      font-weight: 500;
-    }
+/* ═══════════════════════════════════════════
+   Brutalist Range Inputs
+   ═══════════════════════════════════════════ */
+input[type="range"] {
+  width: 100%; -webkit-appearance: none; appearance: none;
+  background: transparent; cursor: pointer; height: 20px;
+}
+input[type="range"]:focus { outline: none; }
 
-    input[type="range"] {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      background: transparent;
-    }
+/* Track — thin solid line */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%; height: 3px; border-radius: 0;
+}
 
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      height: 22px;
-      width: 16px;
-      border-radius: 6px;
-      background: transparent;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0px 4px rgba(0, 0, 0, 0.25);
-      cursor: pointer;
-      margin-top: -3px;
-    }
+/* Thumb — solid circle */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  margin-top: -6.5px; cursor: grab;
+  transition: transform 0.1s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+input[type="range"]:active::-webkit-slider-thumb {
+  cursor: grabbing; transform: scale(1.05);
+}
 
-    input[type="range"]::-webkit-slider-runnable-track {
-      width: 100%;
-      height: 16px;
-      cursor: pointer;
-      background: var(--border-color);
-      border-radius: 4px;
-    }
 
-    input[type="range"]:focus {
-      outline: none;
-    }
+/* ═══════════════════════════════════════════
+   Actions
+   ═══════════════════════════════════════════ */
+.actions { width: 100%; max-width: 280px; display: flex; gap: 8px; }
+button.act {
+  flex: 1; padding: 9px 0; border-radius: 6px;
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.3px; cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.15s ease;
+}
+button.act:hover  { transform: translateY(-1px); }
+button.act:active { transform: translateY(0); }
+button.act.primary {
+  background: var(--ui-color); color: var(--ui-color-inv);
+  border: none;
+}
+button.act.secondary {
+  background: transparent; color: var(--ui-color);
+  border: 2px solid var(--ui-color); opacity: 0.6;
+}
+button.act.secondary:hover { opacity: 1; }
 
-    /* Colorized tracks for better feedback */
-    #h-slider::-webkit-slider-runnable-track {
-      background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
-    }
-
-    #s-slider::-webkit-slider-runnable-track {
-      background: linear-gradient(to right, #808080, var(--current-hue-color, #ff0000));
-    }
-
-    #l-slider::-webkit-slider-runnable-track {
-      background: linear-gradient(to right, #000000, var(--current-hue-color, #ff0000), #ffffff);
-    }
-
-    .actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: auto;
-      padding-bottom: 8px;
-    }
-
-    button {
-      padding: 10px 16px;
-      border-radius: 6px;
-      border: none;
-      font-family: inherit;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-      transition: background-color 0.2s;
-    }
-
-    button.primary {
-      background-color: var(--primary-color);
-      color: var(--primary-text-color);
-    }
-
-    button.primary:hover {
-      opacity: 0.9;
-    }
-
-    button.secondary {
-      background-color: var(--secondary-color);
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-    }
-
-    button.secondary:hover {
-      opacity: 0.9;
-    }
-
-    .score-display {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      font-size: 24px;
-      font-weight: 800;
-      color: #ffffff;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      padding: 4px 0;
-      width: 80%;
-      border-radius: 4px;
-      margin: 0;
-      pointer-events: none;
-      display: none;
-    }
-  </style>
+/* ─── Target contrast ─── */
+.target-light { color: #ffffff; }
+.target-dark  { color: #111111; }
+</style>
 </head>
 
 <body>
 
-  <div class="color-match-section">
-    <div class="color-blocks">
-      <div id="target-color" class="color-half"></div>
-      <div id="current-color" class="color-half"></div>
-      <div id="score-display" class="score-display">0%</div>
-    </div>
-    <div class="color-labels">
-      <span>Target</span>
-      <span>Current</span>
-    </div>
+<div id="score-badge" class="score-badge">0%</div>
+
+<!-- ─── Target ─── -->
+<div id="target-color-section" class="target-color-section">
+  <span class="section-label target-label">Target</span>
+  <span id="target-hex" class="hex-display">—</span>
+</div>
+
+<!-- ─── User ─── -->
+<div id="user-color-section" class="user-color-section" data-contrast="light">
+  <span class="section-label user-label">Your Guess</span>
+
+  <!-- Folder Tabs -->
+  <div class="tab-bar">
+    <button data-tab="hsl" class="active">HSL</button>
+    <button data-tab="rgb">RGB</button>
+    <button data-tab="hsb">HSB</button>
   </div>
 
-  <div class="sliders-container">
-    <div class="slider-row">
-      <label for="h-slider" title="Hue">H</label>
-      <input type="range" id="h-slider" min="0" max="360" value="180">
+  <!-- Bordered container merges with tabs -->
+  <div class="slider-container">
+
+    <!-- HSL -->
+    <div class="slider-panel active" data-panel="hsl">
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Hue</span><span class="slider-value" id="hsl-h-val">180°</span></div>
+        <input type="range" id="hsl-h" min="0" max="360" value="180">
+      </div>
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Saturation</span><span class="slider-value" id="hsl-s-val">50%</span></div>
+        <input type="range" id="hsl-s" min="0" max="100" value="50">
+      </div>
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Lightness</span><span class="slider-value" id="hsl-l-val">50%</span></div>
+        <input type="range" id="hsl-l" min="0" max="100" value="50">
+      </div>
     </div>
-    <div class="slider-row">
-      <label for="s-slider" title="Saturation">S</label>
-      <input type="range" id="s-slider" min="0" max="100" value="50">
+
+    <!-- RGB -->
+    <div class="slider-panel" data-panel="rgb">
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Red</span><span class="slider-value" id="rgb-r-val">64</span></div>
+        <input type="range" id="rgb-r" min="0" max="255" value="64">
+      </div>
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Green</span><span class="slider-value" id="rgb-g-val">191</span></div>
+        <input type="range" id="rgb-g" min="0" max="255" value="191">
+      </div>
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Blue</span><span class="slider-value" id="rgb-b-val">191</span></div>
+        <input type="range" id="rgb-b" min="0" max="255" value="191">
+      </div>
     </div>
-    <div class="slider-row">
-      <label for="l-slider" title="Lightness">L</label>
-      <input type="range" id="l-slider" min="0" max="100" value="50">
+
+    <!-- HSB -->
+    <div class="slider-panel" data-panel="hsb">
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Hue</span><span class="slider-value" id="hsb-h-val">180°</span></div>
+        <input type="range" id="hsb-h" min="0" max="360" value="180">
+      </div>
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Saturation</span><span class="slider-value" id="hsb-s-val">66%</span></div>
+        <input type="range" id="hsb-s" min="0" max="100" value="66">
+      </div>
+      <div class="slider-group">
+        <div class="slider-info"><span class="slider-label">Brightness</span><span class="slider-value" id="hsb-b-val">75%</span></div>
+        <input type="range" id="hsb-b" min="0" max="100" value="75">
+      </div>
     </div>
-  </div>
+
+  </div><!-- /slider-container -->
 
   <div class="actions">
-    <button id="reset-btn" class="secondary">Reset</button>
-    <button id="check-btn" class="primary">Check match</button>
-    <button id="add-palette-btn" class="primary" style="display: none;">Generate swatch</button>
+    <button id="reset-btn" class="act secondary">Try Again</button>
+    <button id="check-btn" class="act primary">Check Match</button>
+    <button id="add-palette-btn" class="act primary" style="display:none">Add to Palette</button>
   </div>
+</div>
 
-  <script>
-    let targetHSL = { h: 0, s: 0, l: 0 };
-    let currentHSL = { h: 180, s: 50, l: 50 };
-    let currentScore = 0;
+<script>
+/* ═══════════════════════════════════════════
+   State — HSL is the single source of truth
+   ═══════════════════════════════════════════ */
+let targetHSL = { h: 0, s: 0, l: 0 };
+let currentHSL = { h: 180, s: 50, l: 50 };
+let currentScore = 0;
+let activeTab = 'hsl';
 
-    function random(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+/* ─── DOM Refs ─── */
+const $ = id => document.getElementById(id);
+const targetSection = $('target-color-section');
+const userSection   = $('user-color-section');
+const targetHexEl   = $('target-hex');
+const scoreBadge    = $('score-badge');
+const checkBtn      = $('check-btn');
+const addPaletteBtn = $('add-palette-btn');
+const resetBtn      = $('reset-btn');
 
-    function initTarget() {
-      targetHSL = {
-        h: random(0, 360),
-        s: random(30, 100), // Avoid fully desaturated targets
-        l: random(20, 80)   // Avoid fully black or white targets
-      };
-      document.getElementById('target-color').style.backgroundColor = `hsl(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
-    }
+const hslH = $('hsl-h'), hslS = $('hsl-s'), hslL = $('hsl-l');
+const hslHV = $('hsl-h-val'), hslSV = $('hsl-s-val'), hslLV = $('hsl-l-val');
+const rgbR = $('rgb-r'), rgbG = $('rgb-g'), rgbB = $('rgb-b');
+const rgbRV = $('rgb-r-val'), rgbGV = $('rgb-g-val'), rgbBV = $('rgb-b-val');
+const hsbH = $('hsb-h'), hsbS = $('hsb-s'), hsbB = $('hsb-b');
+const hsbHV = $('hsb-h-val'), hsbSV = $('hsb-s-val'), hsbBV = $('hsb-b-val');
 
-    function updateCurrent() {
-      currentHSL.h = parseInt(document.getElementById('h-slider').value);
-      currentHSL.s = parseInt(document.getElementById('s-slider').value);
-      currentHSL.l = parseInt(document.getElementById('l-slider').value);
+/* ═══════════════════════════════════════════
+   Color Conversion Engine
+   ═══════════════════════════════════════════ */
+function hslToRgb01(h, s, l) {
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return { r: f(0), g: f(8), b: f(4) };
+}
 
-      document.getElementById('current-color').style.backgroundColor = `hsl(${currentHSL.h}, ${currentHSL.s}%, ${currentHSL.l}%)`;
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+    h *= 360;
+  }
+  return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
 
-      // Update CSS variable for slider tracks
-      document.documentElement.style.setProperty('--current-hue-color', `hsl(${currentHSL.h}, 100%, 50%)`);
-    }
+function hslToHsb(h, s, l) {
+  s /= 100; l /= 100;
+  const b = l + s * Math.min(l, 1 - l);
+  const sb = b === 0 ? 0 : 2 * (1 - l / b);
+  return { h: Math.round(h), s: Math.round(sb * 100), b: Math.round(b * 100) };
+}
 
-    function calculateScore(target, current) {
-      // 1. Hue distance (circular, max distance is 180)
-      let rawDeltaH = Math.abs(target.h - current.h);
-      let deltaH = Math.min(rawDeltaH, 360 - rawDeltaH);
+function hsbToHsl(h, s, b) {
+  s /= 100; b /= 100;
+  const l = b * (1 - s / 2);
+  const sl = (l === 0 || l === 1) ? 0 : (b - l) / Math.min(l, 1 - l);
+  return { h: Math.round(h), s: Math.round(sl * 100), l: Math.round(l * 100) };
+}
 
-      // Normalize deltaH to 0-100 scale (since 180 is the max difference)
-      let normDeltaH = (deltaH / 180) * 100;
+function rgbToHex01(r, g, b) {
+  const hx = c => Math.round(c * 255).toString(16).padStart(2, '0');
+  return ('#' + hx(r) + hx(g) + hx(b)).toUpperCase();
+}
 
-      // 2. Saturation and Lightness distance (already 0-100)
-      let deltaS = Math.abs(target.s - current.s);
-      let deltaL = Math.abs(target.l - current.l);
+function getHex(h, s, l) {
+  const c = hslToRgb01(h, s, l);
+  return rgbToHex01(c.r, c.g, c.b);
+}
 
-      // 3. Euclidean distance
-      let distance = Math.sqrt(
-        Math.pow(normDeltaH, 2) +
-        Math.pow(deltaS, 2) +
-        Math.pow(deltaL, 2)
-      );
+function random(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-      // Max possible distance is sqrt(100^2 + 100^2 + 100^2) ≈ 173.2
-      const maxDistance = Math.sqrt(30000);
+/* ═══════════════════════════════════════════
+   Tab System
+   ═══════════════════════════════════════════ */
+document.querySelectorAll('.tab-bar button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.slider-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[data-panel="${activeTab}"]`).classList.add('active');
+  });
+});
 
-      // Calculate percentage match
-      let score = Math.max(0, 100 - (distance / maxDistance) * 100);
-      return Math.round(score);
-    }
+/* ═══════════════════════════════════════════
+   Sync all sliders from currentHSL
+   ═══════════════════════════════════════════ */
+function syncAllSliders() {
+  const { h, s, l } = currentHSL;
 
-    document.getElementById('h-slider').addEventListener('input', updateCurrent);
-    document.getElementById('s-slider').addEventListener('input', updateCurrent);
-    document.getElementById('l-slider').addEventListener('input', updateCurrent);
+  // HSL
+  hslH.value = h; hslS.value = s; hslL.value = l;
+  hslHV.textContent = h + '°'; hslSV.textContent = s + '%'; hslLV.textContent = l + '%';
 
-    function hslToRgbUI(h, s, l) {
-      s /= 100;
-      l /= 100;
-      const k = n => (n + h / 30) % 12;
-      const a = s * Math.min(l, 1 - l);
-      const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-      return { r: f(0), g: f(8), b: f(4) };
-    }
+  // RGB
+  const rgb01 = hslToRgb01(h, s, l);
+  const r8 = Math.round(rgb01.r * 255), g8 = Math.round(rgb01.g * 255), b8 = Math.round(rgb01.b * 255);
+  rgbR.value = r8; rgbG.value = g8; rgbB.value = b8;
+  rgbRV.textContent = r8; rgbGV.textContent = g8; rgbBV.textContent = b8;
 
-    function rgbToHex(r, g, b) {
-      const toHex = c => Math.round(c * 255).toString(16).padStart(2, '0');
-      return ("#" + toHex(r) + toHex(g) + toHex(b)).toUpperCase();
-    }
+  // HSB
+  const hsb = hslToHsb(h, s, l);
+  hsbH.value = hsb.h; hsbS.value = hsb.s; hsbB.value = hsb.b;
+  hsbHV.textContent = hsb.h + '°'; hsbSV.textContent = hsb.s + '%'; hsbBV.textContent = hsb.b + '%';
+}
 
-    document.getElementById('check-btn').addEventListener('click', () => {
-      currentScore = calculateScore(targetHSL, currentHSL);
-      const scoreDisplay = document.getElementById('score-display');
-      scoreDisplay.innerText = `${currentScore}% match!`;
-      scoreDisplay.style.display = 'block';
-      document.getElementById('add-palette-btn').style.display = 'block';
-      document.getElementById('check-btn').style.display = 'none';
-    });
+/* ═══════════════════════════════════════════
+   Dynamic Contrast — YIQ Perceived Luminance
+   ═══════════════════════════════════════════ */
+function updateContrast() {
+  const rgb = hslToRgb01(currentHSL.h, currentHSL.s, currentHSL.l);
+  const r = Math.round(rgb.r * 255);
+  const g = Math.round(rgb.g * 255);
+  const b = Math.round(rgb.b * 255);
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  const mode = yiq >= 128 ? 'dark' : 'light';
+  const uiColor = mode === 'dark' ? '#000000' : '#ffffff';
 
-    document.getElementById('add-palette-btn').addEventListener('click', () => {
-      const rgb = hslToRgbUI(targetHSL.h, targetHSL.s, targetHSL.l);
-      const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-      const hslString = `HSL(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
-      parent.postMessage({ pluginMessage: { type: 'ADD_TO_PALETTE', targetColorRGB: rgb, hex, hslString } }, '*');
-    });
+  // Set data-contrast attribute — drives all CSS via the attribute selectors above
+  userSection.setAttribute('data-contrast', mode);
 
-    document.getElementById('reset-btn').addEventListener('click', () => {
-      initTarget();
-      document.getElementById('h-slider').value = 180;
-      document.getElementById('s-slider').value = 50;
-      document.getElementById('l-slider').value = 50;
-      updateCurrent();
-      document.getElementById('score-display').style.display = 'none';
-      document.getElementById('add-palette-btn').style.display = 'none';
-      document.getElementById('check-btn').style.display = 'block';
-    });
+  // Force slider pseudo-elements to update (WebKit won't re-resolve vars in shadow DOM)
+  document.querySelectorAll('#user-color-section input[type="range"]').forEach(slider => {
+    slider.style.setProperty('--ui-color', uiColor);
+  });
 
-    initTarget();
-    updateCurrent();
-  </script>
+  // Also paint track + thumb directly via style injection
+  let styleEl = document.getElementById('dynamic-slider-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'dynamic-slider-style';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `
+    input[type="range"]::-webkit-slider-runnable-track { background: ${uiColor} !important; }
+    input[type="range"]::-webkit-slider-thumb { background: ${uiColor} !important; border: 2px solid ${uiColor} !important; }
+  `;
+}
+
+function updateTargetContrast() {
+  const l = targetHSL.l;
+  if (l < 50) {
+    targetSection.classList.remove('target-dark');
+    targetSection.classList.add('target-light');
+  } else {
+    targetSection.classList.remove('target-light');
+    targetSection.classList.add('target-dark');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Master Render
+   ═══════════════════════════════════════════ */
+function render() {
+  userSection.style.backgroundColor = `hsl(${currentHSL.h},${currentHSL.s}%,${currentHSL.l}%)`;
+  syncAllSliders();
+  updateContrast();
+}
+
+/* ═══════════════════════════════════════════
+   Input Handlers
+   ═══════════════════════════════════════════ */
+function onHSLInput() {
+  currentHSL.h = +hslH.value; currentHSL.s = +hslS.value; currentHSL.l = +hslL.value;
+  render();
+}
+function onRGBInput() {
+  const conv = rgbToHsl(+rgbR.value, +rgbG.value, +rgbB.value);
+  currentHSL.h = conv.h; currentHSL.s = conv.s; currentHSL.l = conv.l;
+  render();
+}
+function onHSBInput() {
+  const conv = hsbToHsl(+hsbH.value, +hsbS.value, +hsbB.value);
+  currentHSL.h = conv.h; currentHSL.s = conv.s; currentHSL.l = conv.l;
+  render();
+}
+
+[hslH, hslS, hslL].forEach(el => el.addEventListener('input', onHSLInput));
+[rgbR, rgbG, rgbB].forEach(el => el.addEventListener('input', onRGBInput));
+[hsbH, hsbS, hsbB].forEach(el => el.addEventListener('input', onHSBInput));
+
+/* ═══════════════════════════════════════════
+   Game Logic
+   ═══════════════════════════════════════════ */
+function initTarget() {
+  targetHSL = { h: random(0, 360), s: random(30, 100), l: random(20, 80) };
+  targetSection.style.backgroundColor = `hsl(${targetHSL.h},${targetHSL.s}%,${targetHSL.l}%)`;
+  targetHexEl.textContent = getHex(targetHSL.h, targetHSL.s, targetHSL.l);
+  updateTargetContrast();
+}
+
+function calculateScore(t, c) {
+  let dH = Math.abs(t.h - c.h); dH = Math.min(dH, 360 - dH);
+  const nH = (dH / 180) * 100, dS = Math.abs(t.s - c.s), dL = Math.abs(t.l - c.l);
+  const dist = Math.sqrt(nH * nH + dS * dS + dL * dL);
+  return Math.round(Math.max(0, 100 - (dist / Math.sqrt(30000)) * 100));
+}
+
+checkBtn.addEventListener('click', () => {
+  currentScore = calculateScore(targetHSL, currentHSL);
+  scoreBadge.textContent = `${currentScore}% match`;
+  scoreBadge.classList.remove('animate-in');
+  void scoreBadge.offsetWidth;
+  scoreBadge.classList.add('visible', 'animate-in');
+  addPaletteBtn.style.display = '';
+  checkBtn.style.display = 'none';
+  targetHexEl.textContent = getHex(targetHSL.h, targetHSL.s, targetHSL.l);
+});
+
+addPaletteBtn.addEventListener('click', () => {
+  const rgb = hslToRgb01(targetHSL.h, targetHSL.s, targetHSL.l);
+  const hex = getHex(targetHSL.h, targetHSL.s, targetHSL.l);
+  const hsl = `HSL(${targetHSL.h}, ${targetHSL.s}%, ${targetHSL.l}%)`;
+  const uRgb = hslToRgb01(currentHSL.h, currentHSL.s, currentHSL.l);
+  const uHex = getHex(currentHSL.h, currentHSL.s, currentHSL.l);
+  const uHsl = `HSL(${currentHSL.h}, ${currentHSL.s}%, ${currentHSL.l}%)`;
+  parent.postMessage({ pluginMessage: {
+    type: 'ADD_TO_PALETTE', targetColorRGB: rgb, hex, hslString: hsl,
+    userColorRGB: uRgb, userHex: uHex, userHslString: uHsl, score: currentScore
+  }}, '*');
+});
+
+resetBtn.addEventListener('click', () => {
+  initTarget();
+  currentHSL = { h: 180, s: 50, l: 50 };
+  render();
+  scoreBadge.classList.remove('visible', 'animate-in');
+  addPaletteBtn.style.display = 'none';
+  checkBtn.style.display = '';
+});
+
+/* ─── Boot ─── */
+initTarget();
+render();
+</script>
 </body>
-
 </html>
